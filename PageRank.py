@@ -12,7 +12,13 @@ def CalculateGraphSize(graph):
 
 graphSize = CalculateGraphSize(G)
 
-def PageSurfer():
+def PageSurfer(noOfIterarions: int):
+    #TODO:
+    #Start at random page
+    #Random chance to go to a random page (chance same as damping factor)
+    #Else go to one of the pages linked by this page at random
+    #Page is reached, record this in a dictionary
+    #Repeat for noOfIteration times
     pass
 
 def CreateAdjecencyMatrix(graph: nx.Graph):
@@ -32,6 +38,7 @@ def CreateBacklinkMatrix(adjecencyMatrix):
 def GetFrontLinkCount(adjecencyMatrix):
     linkDict = {}
 
+    #TODO: Read the sum of the rows using numpy instead
     for pageLinkRow in range(0, graphSize[0]):
         for link in adjecencyMatrix[pageLinkRow]:
             if(link > 0):
@@ -46,6 +53,7 @@ def GetBacklinkCount(adjecencyMatrix):
     transposedAdj = np.transpose(adjecencyMatrix)
     backlinkDict = {}
 
+    #TODO: Read the sum of the rows using numpy instead
     for pageBacklinkRow in range(0, graphSize[0]):
         for backlink in transposedAdj[pageBacklinkRow]:
             if(backlink > 0):
@@ -63,13 +71,26 @@ def GivePageOneVote(adjecencyMatrix, linkDict):
 
 def RankPages(adjecencyMatrix):
     frontlinkDict = GetFrontLinkCount(adjecencyMatrix)
-    GivePageOneVote(adjecencyMatrix, frontlinkDict)
-
-    backlinkMatrix = CreateBacklinkMatrix(adjecencyMatrix)
-
-    print(backlinkMatrix)
     #Weigh by importance of voting pages
     #One page, one vote
+    GivePageOneVote(adjecencyMatrix, frontlinkDict)
+
+    #Matrix A
+    backlinkMatrix = CreateBacklinkMatrix(adjecencyMatrix)
+
+    #Fix dangling nodes
+    #TODO: Modify adjecency matrix so that nodes that do not link to any pages instead link to every page (easier to code)
+    #OR: Create new matrix D with the same dimensions as A where D[i,j] is 1/n (total pages, i.e. dimension of D) if j is dangling
+    #A2 = A + D
+
+    #Fix disconnected web
+    #TODO: Introduce a damping factor m between 0 and 1 (0.15 in requirements I think)
+    #A3 = (1 - m)(A2) + m*S where S is a new matrix of the same dimensions as A, all numbers in matrix are 1/n
+
+    #TODO: Compute approximation instead of doing all these calculations
+    #I don't understand it from the notes
+
+    print(backlinkMatrix)
 
 adj = CreateAdjecencyMatrix(G)
 RankPages(adj)
