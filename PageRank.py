@@ -23,8 +23,13 @@ def CreateAdjecencyMatrix(graph: nx.Graph):
 
     return adj_matrix
 
-def RankPages(adjecencyMatrix):
-    #Get backlink count
+def CreateBacklinkMatrix(adjecencyMatrix):
+    #The backlink matrix is the transpose of the adjecency matrix upside down
+    backlinkMatrix = np.transpose(adjecencyMatrix)
+    np.flip(backlinkMatrix, 1)
+    print(backlinkMatrix)
+
+def GetBacklinkCount(adjecencyMatrix):
     transposedAdj = np.transpose(adjecencyMatrix)
     backlinkDict = {}
 
@@ -36,8 +41,14 @@ def RankPages(adjecencyMatrix):
                 else:
                     backlinkDict[pageBacklinkRow] = 1
 
+    return backlinkDict
+
+def RankPages(adjecencyMatrix):
+    
+
 
     print(backlinkDict)
+    CreateBacklinkMatrix(adjecencyMatrix)
     #Weigh by importance of voting pages
     #One page, one vote
 
