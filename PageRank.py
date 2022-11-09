@@ -2,7 +2,7 @@ import numpy as np
 import networkx as nx
 import random
 
-file = open("PageRankExampleData\\tiny.txt", "rb")
+file = open("PageRankExampleData\\p2p-Gnutella08-mod.txt", "rb")
 G: nx.Graph = nx.read_adjlist(file, create_using=nx.DiGraph())
 file.close()
 
@@ -118,8 +118,14 @@ def RankPages(adjecencyMatrix, k):
     mSx = dampingFactor * 1/graphSize[0] * 1/graphSize[0]
 
     #xk+1 = (1 - m) * Axk + (1 - m) * Dxk + mSxk
+    #Save first value for reference
+    reference = 0
     for _ in range(0, k):
-        x = oneMinusM * np.matmul(backlinkMatrix, x) + oneMinusM * CalculateOptimalDx(D, x) + mSx 
+        reference = x[0][0]
+        x = oneMinusM * np.matmul(backlinkMatrix, x) + oneMinusM * CalculateOptimalDx(D, x) + mSx
+        #If the ranks didn't change, abort, no point in going
+        if(x[0][0] == reference):
+            break
 
     #Rank pages based on their xk score
     pageRankDict = {}
@@ -133,5 +139,5 @@ def CalculateOptimalDx(D, x):
     return np.full((graphSize[0], 1), numberToFill[0])
 
 adj = CreateAdjecencyMatrix(G)
-print(RankPages(adj, 10000))
+print(RankPages(adj, 100))
 #print(PageSurfer(100000, G))
