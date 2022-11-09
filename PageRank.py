@@ -7,6 +7,7 @@ G: nx.Graph = nx.read_adjlist(file, create_using=nx.DiGraph())
 file.close()
 
 def CalculateGraphSize(graph):
+    #calculates graph size form loaded data
     return [len(graph), len(graph)]
 
 graphSize = CalculateGraphSize(G)
