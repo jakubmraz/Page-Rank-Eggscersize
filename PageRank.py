@@ -37,8 +37,9 @@ def PageSurfer(noOfIterarions: int, G: nx.Graph) -> dict:
         #If no neighbours, go to random page
         if(len(pagesLinked) == 0):
             pageNr = SurferGetRandomPage(visitedPages)
-        pageNr = random.choice(pagesLinked)
-        SurferAddToDict(visitedPages, int(pageNr))
+        else:
+            pageNr = random.choice(pagesLinked)
+            SurferAddToDict(visitedPages, int(pageNr))
     
     return dict(sorted(visitedPages.items(), key=lambda item: item[1], reverse=True))
 
@@ -87,10 +88,13 @@ def GetBacklinkCount(adjecencyMatrix):
 
 def GivePageOneVote(adjecencyMatrix, linkDict):
     for rowNr in range(0, graphSize[0]):
-        numberOfFrontLinks = linkDict[rowNr]
-        adjecencyMatrix[rowNr] = adjecencyMatrix[rowNr] / numberOfFrontLinks 
-
-def RankPages(adjecencyMatrix):
+        if(rowNr in linkDict):
+            numberOfFrontLinks = linkDict[rowNr]
+            adjecencyMatrix[rowNr] = adjecencyMatrix[rowNr] / numberOfFrontLinks 
+        else:
+            adjecencyMatrix[rowNr] = 0
+        
+def RankPages(adjecencyMatrix, k):
     frontlinkDict = GetFrontLinkCount(adjecencyMatrix)
     #Weigh by importance of voting pages
     #One page, one vote
@@ -99,20 +103,35 @@ def RankPages(adjecencyMatrix):
     #Matrix A
     backlinkMatrix = CreateBacklinkMatrix(adjecencyMatrix)
 
-    #Fix dangling nodes
-    #TODO: Modify adjecency matrix so that nodes that do not link to any pages instead link to every page (easier to code)
-    #OR: Create new matrix D with the same dimensions as A where D[i,j] is 1/n (total pages, i.e. dimension of D) if j is dangling
-    #A2 = A + D
+    #Matrix D for dangling nodes
+    D = np.zeros(graphSize)
+    arrayOfSums = np.sum(backlinkMatrix, axis=0)
 
-    #Fix disconnected web
-    #TODO: Introduce a damping factor m between 0 and 1 (0.15 in requirements I think)
-    #A3 = (1 - m)(A2) + m*S where S is a new matrix of the same dimensions as A, all numbers in matrix are 1/n
+    for j in range(0, graphSize[0]):
+        if(arrayOfSums[j] == 0):
+            D[:,j] = 1/graphSize[0]
 
-    #TODO: Compute approximation instead of doing all these calculations
-    #I don't understand it from the notes
+    #Calculating the approximation xk
+    #x0 gon give it to you
+    x = np.full((graphSize[0], 1), 1/graphSize[0])
+    oneMinusM = 1 - dampingFactor
+    mSx = dampingFactor * 1/graphSize[0] * 1/graphSize[0]
 
-    print(backlinkMatrix)
+    #xk+1 = (1 - m) * Axk + (1 - m) * Dxk + mSxk
+    for _ in range(0, k):
+        x = oneMinusM * np.matmul(backlinkMatrix, x) + oneMinusM * CalculateOptimalDx(D, x) + mSx 
 
-#adj = CreateAdjecencyMatrix(G)
-#RankPages(adj)
-print(PageSurfer(100000, G))
+    #Rank pages based on their xk score
+    pageRankDict = {}
+    for i in range(0, graphSize[0]):
+        pageRankDict[i] = x[i][0]
+
+    return dict(sorted(pageRankDict.items(), key=lambda item: item[1], reverse=True))
+
+def CalculateOptimalDx(D, x):
+    numberToFill = np.matmul(D[0,:], x)
+    return np.full((graphSize[0], 1), numberToFill[0])
+
+adj = CreateAdjecencyMatrix(G)
+print(RankPages(adj, 10000))
+#print(PageSurfer(100000, G))
