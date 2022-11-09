@@ -1,7 +1,6 @@
 import numpy as np
 import networkx as nx
-from matplotlib import pyplot as plt
-import matplotlib as mpl
+import random
 
 file = open("PageRankExampleData\\tiny.txt", "rb")
 G: nx.Graph = nx.read_adjlist(file, create_using=nx.DiGraph())
@@ -11,15 +10,36 @@ def CalculateGraphSize(graph):
     return [len(graph), len(graph)]
 
 graphSize = CalculateGraphSize(G)
+dampingFactor = 0.15
 
-def PageSurfer(noOfIterarions: int):
-    #TODO:
+def SurferAddToDict(dictionary: dict, pageNr: int):
+    if (pageNr not in dictionary):
+        dictionary[pageNr] = 1
+    else:
+        dictionary[pageNr] += 1
+
+def SurferGetRandomPage(dictionary: dict):
+    newPage = random.randint(0, graphSize[0] - 1)
+    SurferAddToDict(dictionary, newPage)
+    return newPage
+
+def PageSurfer(noOfIterarions: int, G: nx.Graph) -> dict:
+    visitedPages = {}
     #Start at random page
-    #Random chance to go to a random page (chance same as damping factor)
-    #Else go to one of the pages linked by this page at random
-    #Page is reached, record this in a dictionary
-    #Repeat for noOfIteration times
-    pass
+    pageNr = SurferGetRandomPage(visitedPages)
+    for _ in range(noOfIterarions):
+        #Random chance to go to a random page (chance same as damping factor)
+        if(random.random() <= dampingFactor):
+            pageNr = SurferGetRandomPage(visitedPages)
+        #Else go to one of the pages linked by this page at random
+        pagesLinked = list(G.neighbors(str(pageNr)))
+        #If no neighbours, go to random page
+        if(len(pagesLinked) == 0):
+            pageNr = SurferGetRandomPage(visitedPages)
+        pageNr = random.choice(pagesLinked)
+        SurferAddToDict(visitedPages, int(pageNr))
+    
+    return dict(sorted(visitedPages.items(), key=lambda item: item[1], reverse=True))
 
 def CreateAdjecencyMatrix(graph: nx.Graph):
     adj_matrix = np.zeros((CalculateGraphSize(graph)), dtype='float')
@@ -92,5 +112,6 @@ def RankPages(adjecencyMatrix):
 
     print(backlinkMatrix)
 
-adj = CreateAdjecencyMatrix(G)
-RankPages(adj)
+#adj = CreateAdjecencyMatrix(G)
+#RankPages(adj)
+print(PageSurfer(100000, G))
