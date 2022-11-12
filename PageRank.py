@@ -1,5 +1,5 @@
 #Authors:
-#Malthe Nielsem
+#Malthe Nielsen
 #Jakub Mráz
 
 import numpy as np
