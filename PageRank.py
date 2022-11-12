@@ -1,5 +1,10 @@
+#Authors:
+#Malthe Nielsem
+#Jakub Mráz
+
 import numpy as np
 import networkx as nx
+from scipy.sparse import csr_matrix
 import random
 
 file = open("PageRankExampleData\\p2p-Gnutella08-mod.txt", "rb")
@@ -57,48 +62,19 @@ def CreateBacklinkMatrix(adjecencyMatrix):
     np.flip(backlinkMatrix, 1)
     return backlinkMatrix
 
-def GetFrontLinkCount(adjecencyMatrix):
-    linkDict = {}
-
-    #TODO: Read the sum of the rows using numpy instead
-    for pageLinkRow in range(0, graphSize[0]):
-        for link in adjecencyMatrix[pageLinkRow]:
-            if(link > 0):
-                if(pageLinkRow in linkDict):
-                    linkDict[pageLinkRow] += 1
-                else:
-                    linkDict[pageLinkRow] = 1
-
-    return linkDict
-
-def GetBacklinkCount(adjecencyMatrix):
-    transposedAdj = np.transpose(adjecencyMatrix)
-    backlinkDict = {}
-
-    #TODO: Read the sum of the rows using numpy instead
-    for pageBacklinkRow in range(0, graphSize[0]):
-        for backlink in transposedAdj[pageBacklinkRow]:
-            if(backlink > 0):
-                if(pageBacklinkRow in backlinkDict):
-                    backlinkDict[pageBacklinkRow] += 1
-                else:
-                    backlinkDict[pageBacklinkRow] = 1
-
-    return backlinkDict
-
-def GivePageOneVote(adjecencyMatrix, linkDict):
+def GivePageOneVote(adjecencyMatrix, linkCounts):
     for rowNr in range(0, graphSize[0]):
-        if(rowNr in linkDict):
-            numberOfFrontLinks = linkDict[rowNr]
+        if(linkCounts[rowNr] != 0):
+            numberOfFrontLinks = linkCounts[rowNr]
             adjecencyMatrix[rowNr] = adjecencyMatrix[rowNr] / numberOfFrontLinks 
         else:
             adjecencyMatrix[rowNr] = 0
         
 def RankPages(adjecencyMatrix, k):
-    frontlinkDict = GetFrontLinkCount(adjecencyMatrix)
-    #Weigh by importance of voting pages
+    frontlinkCounts = np.sum(adjecencyMatrix, axis=1)
+
     #One page, one vote
-    GivePageOneVote(adjecencyMatrix, frontlinkDict)
+    GivePageOneVote(adjecencyMatrix, frontlinkCounts)
 
     #Matrix A
     backlinkMatrix = CreateBacklinkMatrix(adjecencyMatrix)
@@ -115,16 +91,19 @@ def RankPages(adjecencyMatrix, k):
     #x0 gon give it to you
     x = np.full((graphSize[0], 1), 1/graphSize[0])
     oneMinusM = 1 - dampingFactor
-    mSx = dampingFactor * 1/graphSize[0] * 1/graphSize[0]
+    mS = np.full([graphSize[0], graphSize[0]], dampingFactor * 1/graphSize[0])
+    mSx = np.matmul(mS, x)
 
     #xk+1 = (1 - m) * Axk + (1 - m) * Dxk + mSxk
     #Save first value for reference
     reference = 0
-    for _ in range(0, k):
+    for breakpoint in range(0, k):
         reference = x[0][0]
-        x = oneMinusM * np.matmul(backlinkMatrix, x) + oneMinusM * CalculateOptimalDx(D, x) + mSx
+        #x = oneMinusM * np.matmul(backlinkMatrix, x) + oneMinusM * CalculateOptimalDx(D, x) + mSx
+        x = oneMinusM * CalculateOptimalAx(backlinkMatrix, x) + oneMinusM * CalculateOptimalDx(D, x) + mSx
         #If the ranks didn't change, abort, no point in going
         if(x[0][0] == reference):
+            print("sHE'S brOKen at k:" + str(breakpoint))
             break
 
     #Rank pages based on their xk score
@@ -138,6 +117,10 @@ def CalculateOptimalDx(D, x):
     numberToFill = np.matmul(D[0,:], x)
     return np.full((graphSize[0], 1), numberToFill[0])
 
+def CalculateOptimalAx(A, x):
+    sparseA = csr_matrix(A)
+    return sparseA.dot(x)
+
 adj = CreateAdjecencyMatrix(G)
-print(RankPages(adj, 100))
-#print(PageSurfer(100000, G))
+print(RankPages(adj, 10000))
+#print(PageSurfer(1000000, G))
