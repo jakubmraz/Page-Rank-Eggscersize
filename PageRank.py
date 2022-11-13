@@ -7,16 +7,12 @@ import networkx as nx
 from scipy.sparse import csr_matrix
 import random
 
-file = open("PageRankExampleData\\p2p-Gnutella08-mod.txt", "rb")
-G: nx.Graph = nx.read_adjlist(file, create_using=nx.DiGraph())
-file.close()
+graphSize = []
+dampingFactor = 0
 
 def CalculateGraphSize(graph):
     #calculates graph size form loaded data
     return [len(graph), len(graph)]
-
-graphSize = CalculateGraphSize(G)
-dampingFactor = 0.15
 
 def SurferAddToDict(dictionary: dict, pageNr: int):
     if (pageNr not in dictionary):
@@ -121,6 +117,21 @@ def CalculateOptimalAx(A, x):
     sparseA = csr_matrix(A)
     return sparseA.dot(x)
 
-adj = CreateAdjecencyMatrix(G)
-print(RankPages(adj, 10000))
-#print(PageSurfer(1000000, G))
+def main():
+    file = open("PageRankExampleData\\p2p-Gnutella08-mod.txt", "rb")
+    G: nx.Graph = nx.read_adjlist(file, create_using=nx.DiGraph())
+    file.close()
+
+    adj = CreateAdjecencyMatrix(G)
+    global graphSize
+    graphSize = CalculateGraphSize(G)
+    global dampingFactor
+    dampingFactor = 0.15
+
+    print("Page runner results:")
+    print(PageSurfer(1000000, G))
+    print("PageRank results:")
+    print(RankPages(adj, 100))
+
+if __name__ == "__main__":
+	main()
